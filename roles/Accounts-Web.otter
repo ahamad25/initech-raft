@@ -1,0 +1,44 @@
+# Ensure Account App
+{
+    Ensure-Directory $WebsitesRoot;
+
+    Ensure-Asset
+    (
+        Name: Accounts.zip,
+        Directory: $PackagesRoot
+    );
+
+    Extract-ZipFile $PathCombine($PackagesRoot,Accounts.zip)
+    (
+        Directory: $WebsitesRoot
+    );
+
+    # IIS Configuration Settings
+    {
+        Ensure-HostsEntry accounts.localhost
+        (
+            IP: 127.0.0.1
+        );
+    }
+
+    DotNet::Ensure-AppSetting
+    (
+        File: $PathCombine($WebsitesRoot,Web.config),
+        Key: Accounts.Value,
+        Value: $EnvironmentName
+    );
+
+    IIS::Ensure-AppPool AccountsAppPool
+    (
+        Runtime: v4.0,
+        Pipeline: Classic
+    );
+
+    IIS::Ensure-Site Accounts
+    (
+        AppPool: AccountsAppPool,
+        Path: $WebsitesRoot,
+        Protocol: http,
+        Binding: *:1000:
+    );
+}
